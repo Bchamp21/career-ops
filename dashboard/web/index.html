@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="600">
+  <title>Bhuvan's Job Search Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #252836;
+      --border: #2e3248;
+      --accent: #7c6af7;
+      --accent2: #5eead4;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, var(--surface) 0%, #1e1b3a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left h1 { font-size: 20px; font-weight: 700; color: #fff; }
+    .header-left p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .refresh-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .refresh-badge span { color: var(--accent2); font-weight: 600; }
+
+    /* ALERTS */
+    .alerts-bar {
+      background: #2a1a1a;
+      border-bottom: 1px solid #7f1d1d;
+      padding: 10px 32px;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .alert-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* LAYOUT */
+    .main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+    /* STAT CARDS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .stat-card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 32px; font-weight: 700; margin: 4px 0 2px; }
+    .stat-card .sub { font-size: 11px; color: var(--muted); }
+    .stat-card.green .value { color: var(--green); }
+    .stat-card.accent .value { color: var(--accent); }
+    .stat-card.blue .value { color: var(--blue); }
+    .stat-card.yellow .value { color: var(--yellow); }
+
+    /* SECTION */
+    .section { margin-bottom: 28px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .section-header h2 { font-size: 15px; font-weight: 600; }
+    .badge {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* JOBS TABLE */
+    .jobs-table {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    tbody tr {
+      border-top: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: var(--surface2); }
+    td { padding: 12px 14px; }
+    .company-name { font-weight: 600; color: #fff; }
+    .role-name { color: var(--text); font-size: 13px; }
+    .salary { color: var(--accent2); font-weight: 500; }
+    .score-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .score-45 { background: #14532d; color: #86efac; }
+    .score-40 { background: #1e3a5f; color: #93c5fd; }
+    .score-35 { background: #44402a; color: #fde68a; }
+    .status-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .status-evaluated { background: #1e3a5f; color: #93c5fd; }
+    .status-applied { background: #14532d; color: #86efac; }
+    .status-pdf { color: var(--green); font-size: 16px; }
+    .action-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .action-btn:hover { background: #6a59e0; }
+
+    /* BORDERLINE TABLE */
+    .borderline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .borderline-card {
+      background: var(--surface);
+      border: 1px solid #374151;
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .borderline-card .co { font-weight: 700; font-size: 15px; color: #fff; }
+    .borderline-card .ro { color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
+    .borderline-card .salary { color: var(--accent2); font-size: 13px; font-weight: 600; }
+    .verify-tag {
+      display: inline-block;
+      margin-top: 8px;
+      background: #451a03;
+      color: #fbbf24;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* RUN LOG */
+    .run-log {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .log-row {
+      display: grid;
+      grid-template-columns: 120px 60px 80px 80px 1fr;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 13px;
+      align-items: center;
+    }
+    .log-row:last-child { border-bottom: none; }
+    .log-header {
+      background: var(--surface2);
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .log-time { color: var(--muted); font-size: 12px; font-family: monospace; }
+    .log-zero { color: var(--muted); }
+    .log-new { color: var(--green); font-weight: 700; }
+    .log-note { color: var(--muted); font-size: 12px; }
+
+    /* PERSONAL ALERTS */
+    .alerts-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .alert-row {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .alert-row:last-child { border-bottom: none; }
+    .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .alert-content .title { font-weight: 600; font-size: 14px; }
+    .alert-content .desc { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .alert-urgent { border-left: 3px solid var(--red); }
+    .alert-warning { border-left: 3px solid var(--yellow); }
+    .alert-info { border-left: 3px solid var(--blue); }
+
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Bhuvan's Job Search Dashboard</h1>
+    <p>bhuvansarakam@gmail.com &nbsp;·&nbsp; Denver, CO &nbsp;·&nbsp; H1B Transfer/Sponsorship Required &nbsp;·&nbsp; Target: $120K–$150K+</p>
+  </div>
+  <div class="refresh-badge">Auto-refresh every <span>10 min</span> &nbsp;·&nbsp; Last updated: <span id="ts"></span></div>
+</div>
+
+<!-- PERSONAL ALERTS BAR -->
+<div class="alerts-bar">
+  <strong style="color:#f87171;font-size:13px;">⚠ Action Needed:</strong>
+  <div class="alert-item"><span class="alert-dot"></span> <strong>GEICO:</strong> 5 unrecognized device logins (Jul 2 ~02:45–03:04 UTC) — verify account</div>
+  <div class="alert-item"><span class="alert-dot"></span> <strong>Equitas Bank:</strong> KYC reply bounced — resend passport to rekyc@equitas.bank.in</div>
+  <div class="alert-item"><span class="alert-dot" style="background:var(--yellow)"></span> <strong>Passport expired</strong> 03-FEB-26 — critical for H1B status</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card accent">
+      <div class="label">Hourly Runs</div>
+      <div class="value">26</div>
+      <div class="sub">Since Jul 1 ~07:00 UTC</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="label">Jobs Evaluated</div>
+      <div class="value">5</div>
+      <div class="sub">Scored ≥ 4.0/5</div>
+    </div>
+    <div class="stat-card green">
+      <div class="label">PDFs Ready</div>
+      <div class="value">5</div>
+      <div class="sub">In output/ — apply manually</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="label">Email Drafts</div>
+      <div class="value">0</div>
+      <div class="sub">0 qualifying recruiter emails</div>
+    </div>
+    <div class="stat-card" style="--value-color:var(--muted)">
+      <div class="label">Portals Searched</div>
+      <div class="value" style="color:var(--text)">3</div>
+      <div class="sub">Indeed · ZipRecruiter · Dice</div>
+    </div>
+    <div class="stat-card" style="">
+      <div class="label">H1B Roles Found</div>
+      <div class="value" style="color:var(--red)">0</div>
+      <div class="sub">Holiday freeze Jul 1–4</div>
+    </div>
+  </div>
+
+  <!-- JOBS PIPELINE -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Job Pipeline — PDFs Ready for Your Submission</h2>
+      <span class="badge">5 roles · all ≥ 4.0/5</span>
+    </div>
+    <div class="jobs-table">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Company</th>
+            <th>Role</th>
+            <th>Salary</th>
+            <th>Score</th>
+            <th>Archetype</th>
+            <th>PDF</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span style="color:var(--muted)">2</span></td>
+            <td><span class="company-name">GC AI</span></td>
+            <td><span class="role-name">Applied AI Engineer</span></td>
+            <td><span class="salary">$165K–$350K</span></td>
+            <td><span class="score-chip score-45">4.5/5</span></td>
+            <td>LLM / RAG / GenAI</td>
+            <td><span class="status-pdf">✅</span></td>
+            <td><span class="status-chip status-evaluated">Evaluated</span></td>
+            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-gc-ai-2026-07-01.pdf')">📄 View PDF</button></td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--muted)">4</span></td>
+            <td><span class="company-name">Dropzone AI</span></td>
+            <td><span class="role-name">Research Engineer</span></td>
+            <td><span class="salary">$200K–$250K</span></td>
+            <td><span class="score-chip score-45">4.4/5</span></td>
+            <td>LLM / RAG / GenAI</td>
+            <td><span class="status-pdf">✅</span></td>
+            <td><span class="status-chip status-evaluated">Evaluated</span></td>
+            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-dropzone-ai-2026-07-01.pdf')">📄 View PDF</button></td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--muted)">3</span></td>
+            <td><span class="company-name">Parafin</span></td>
+            <td><span class="role-name">ML Platform Engineer</span></td>
+            <td><span class="salary">$230K–$265K</span></td>
+            <td><span class="score-chip score-40">4.3/5</span></td>
+            <td>MLOps / ML Platform</td>
+            <td><span class="status-pdf">✅</span></td>
+            <td><span class="status-chip status-evaluated">Evaluated</span></td>
+            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-parafin-2026-07-01.pdf')">📄 View PDF</button></td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--muted)">1</span></td>
+            <td><span class="company-name">Fanatics</span></td>
+            <td><span class="role-name">Senior Data Scientist</span></td>
+            <td><span class="salary">$170K–$210K</span></td>
+            <td><span class="score-chip score-40">4.2/5</span></td>
+            <td>Senior DS / ML</td>
+            <td><span class="status-pdf">✅</span></td>
+            <td><span class="status-chip status-evaluated">Evaluated</span></td>
+            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-fanatics-2026-07-01.pdf')">📄 View PDF</button></td>
+          </tr>
+          <tr>
+            <td><span style="color:var(--muted)">5</span></td>
+            <td><span class="company-name">Team Velocity</span></td>
+            <td><span class="role-name">Senior Data Scientist</span></td>
+            <td><span class="salary">$160K–$220K</span></td>
+            <td><span class="score-chip score-40">4.0/5</span></td>
+            <td>Senior DS / ML</td>
+            <td><span class="status-pdf">✅</span></td>
+            <td><span class="status-chip status-evaluated">Evaluated</span></td>
+            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-team-velocity-2026-07-01.pdf')">📄 View PDF</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-top:8px;">⚠ Per ethics rules: Claude prepares tailored PDFs but never auto-submits. <strong style="color:var(--text)">You must upload each PDF and click Apply yourself.</strong></p>
+  </div>
+
+  <!-- BORDERLINE ROLES -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Borderline Roles — Verify Before Pursuing</h2>
+      <span class="badge">4 roles · 3.5–3.9/5 · H1B or remote unconfirmed</span>
+    </div>
+    <div class="borderline-grid">
+      <div class="borderline-card">
+        <div class="co">Target</div>
+        <div class="ro">Principal Engineer – AI Platform (AI Factory)</div>
+        <div class="salary">$168K–$303K · Remote or Hybrid (Brooklyn Park, MN)</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 3.8/5. Large Fortune 500 AI org. H1B historically sponsored. <strong>"Remote or Hybrid"</strong> — need to confirm true remote from Denver.</div>
+        <span class="verify-tag">⚡ Verify remote + H1B on Target Careers</span>
+      </div>
+      <div class="borderline-card">
+        <div class="co">Grainger</div>
+        <div class="ro">Data Engineer (Req #332427)</div>
+        <div class="salary">$153K–$174K · Remote (Lake Forest, IL)</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 3.8/5. Fortune 500 industrial/B2B. Data Engineering secondary archetype. H1B historically sponsored.</div>
+        <span class="verify-tag">⚡ Verify remote + H1B on Grainger Careers</span>
+      </div>
+      <div class="borderline-card">
+        <div class="co">Jellyfish</div>
+        <div class="ro">Senior Data &amp; AI Platform Engineer</div>
+        <div class="salary">$150K–$230K · Fully Remote</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 4.0/5 borderline. MLOps/AI Platform archetype match. H1B sponsorship unknown — check their careers page.</div>
+        <span class="verify-tag">⚡ Verify H1B sponsorship on Jellyfish Careers</span>
+      </div>
+      <div class="borderline-card">
+        <div class="co">BCBS Rhode Island</div>
+        <div class="ro">Senior AI Integration Engineer</div>
+        <div class="salary">$151.9K–$243.1K · Remote Optional</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 3.5/5. Nonprofit insurer — H1B sponsorship less common. "Remote optional" may require Providence RI presence.</div>
+        <span class="verify-tag">⚡ Verify H1B + remote on BCBS RI Careers</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+
+    <!-- HOURLY RUN LOG -->
+    <div class="section" style="margin-bottom:0">
+      <div class="section-header">
+        <h2>Hourly Run Log</h2>
+        <span class="badge">26 runs · Jul 1–2</span>
+      </div>
+      <div class="run-log">
+        <div class="log-row log-header">
+          <div>Time (UTC)</div><div>Gmail</div><div>Drafted</div><div>Jobs≥4.0</div><div>Notes</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~10:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Holiday freeze. Same recurring set ZipRecruiter.</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~09:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Equitas KYC bounce flagged. Dice 0 H1B today.</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~08:11</div><div class="log-zero">3</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">⚠ GEICO security alerts + ICICI transfer flagged.</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~07:11</div><div class="log-zero">1</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Grainger Data Eng $153K–$174K borderline (3.8/5).</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~06:11</div><div class="log-zero">1</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Target AI Platform Principal Eng $168K–$303K (3.8/5).</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~05:11</div><div class="log-zero">1</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Clify X staffing blast — Practice Dir AI IoT NYC (2.0/5).</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~04:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">ZipRecruiter: IBM below floor, Jellyfish borderline.</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~03:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Dice: 17 postings, 100% no H1B. Holiday freeze.</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Jul 2 ~02:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">UHG/Airbnb/SentinelOne — all no H1B on Dice.</div>
+        </div>
+        <div class="log-row">
+          <div class="log-time">Runs 1–17</div><div class="log-zero">—</div><div class="log-zero">—</div><div class="log-zero">—</div><div class="log-note">Jul 1 session: 5 PDFs generated. Spam baseline established.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONAL ALERTS PANEL -->
+    <div class="section" style="margin-bottom:0">
+      <div class="section-header">
+        <h2>Personal Alerts</h2>
+        <span class="badge">Requires your attention</span>
+      </div>
+      <div class="alerts-section">
+        <div class="alert-row alert-urgent">
+          <div class="alert-icon">🔐</div>
+          <div class="alert-content">
+            <div class="title">GEICO — Unrecognized Device Logins</div>
+            <div class="desc">5 "new device" login emails on Jul 2: 1× Browser (18:47 UTC Jul 1), 4× iPhone (02:45–03:04 UTC Jul 2). Log into GEICO.com and verify activity. Change password if you didn't make these logins.</div>
+          </div>
+        </div>
+        <div class="alert-row alert-urgent">
+          <div class="alert-icon">🏦</div>
+          <div class="alert-content">
+            <div class="title">ICICI Money2India — Fund Transfer</div>
+            <div class="desc">3 OTPs generated at 02:30–02:34 UTC + transfer receipt #M2E04972043 at 02:38 UTC. If you did NOT initiate this, contact ICICI immediately.</div>
+          </div>
+        </div>
+        <div class="alert-row alert-warning">
+          <div class="alert-icon">📬</div>
+          <div class="alert-content">
+            <div class="title">Equitas Bank KYC — Reply Bounced</div>
+            <div class="desc">Your reply at 03:11 UTC bounced (customer-support@equitas.bank.in not valid). Send a fresh email with passport scan to: <strong>rekyc@equitas.bank.in</strong></div>
+          </div>
+        </div>
+        <div class="alert-row alert-warning">
+          <div class="alert-icon">🛂</div>
+          <div class="alert-content">
+            <div class="title">Passport Expired — 03-FEB-2026</div>
+            <div class="desc">Critical for H1B status maintenance. US visa also expired 27-JUN-2026 (per Equitas KYC). Renew passport ASAP and consult immigration attorney regarding H1B implications.</div>
+          </div>
+        </div>
+        <div class="alert-row alert-info">
+          <div class="alert-icon">🧾</div>
+          <div class="alert-content">
+            <div class="title">Elite Tax Filling — p.divya@elitetaxfilling.com</div>
+            <div class="desc">Sent direct email offering off-season tax assistance. Review if this is your existing tax advisor.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end 2-col grid -->
+
+</div><!-- end main -->
+
+<div class="footer">
+  career-ops &nbsp;·&nbsp; Bhuvan S. job search pipeline &nbsp;·&nbsp; Auto-refreshes every 10 minutes &nbsp;·&nbsp; <span id="ts2"></span>
+</div>
+
+<script>
+  function fmt() {
+    return new Date().toLocaleString('en-US', {
+      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', timeZoneName:'short'
+    });
+  }
+  document.getElementById('ts').textContent = fmt();
+  document.getElementById('ts2').textContent = fmt();
+</script>
+
+</body>
+</html>
