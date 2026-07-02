@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="600">
-  <title>Bhuvan's Job Search Dashboard</title>
+  <title>Bhuvan's Job Search Command Center</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -17,6 +16,7 @@
       --yellow: #f59e0b;
       --red: #ef4444;
       --blue: #3b82f6;
+      --orange: #f97316;
       --text: #e2e8f0;
       --muted: #64748b;
       --radius: 10px;
@@ -30,6 +30,33 @@
       line-height: 1.5;
     }
 
+    /* TOP BAR */
+    .topbar {
+      background: #0a0c14;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar span { color: var(--muted); }
+    .topbar a {
+      color: var(--accent2);
+      text-decoration: none;
+      padding: 3px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      transition: border-color 0.2s;
+    }
+    .topbar a:hover { border-color: var(--accent2); }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 11px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
     /* HEADER */
     .header {
       background: linear-gradient(135deg, var(--surface) 0%, #1e1b3a 100%);
@@ -39,518 +66,1039 @@
       align-items: center;
       justify-content: space-between;
     }
-    .header-left h1 { font-size: 20px; font-weight: 700; color: #fff; }
-    .header-left p { color: var(--muted); font-size: 12px; margin-top: 2px; }
-    .refresh-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 12px;
-      color: var(--muted);
+    .header-left h1 { font-size: 22px; font-weight: 700; color: #fff; }
+    .header-left p { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .header-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .tag {
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid;
     }
-    .refresh-badge span { color: var(--accent2); font-weight: 600; }
+    .tag-green { background: #052e16; color: var(--green); border-color: #166534; }
+    .tag-blue { background: #0c1a3a; color: var(--blue); border-color: #1e3a6e; }
+    .tag-yellow { background: #2a1800; color: var(--yellow); border-color: #854d0e; }
+    .tag-purple { background: #1a0a3a; color: #a78bfa; border-color: #4c1d95; }
+    .tag-red { background: #1a0505; color: var(--red); border-color: #7f1d1d; }
+    .header-right { text-align: right; }
+    .header-right .last-run { font-size: 11px; color: var(--muted); }
+    .header-right .run-count { font-size: 28px; font-weight: 700; color: var(--accent); }
 
-    /* ALERTS */
-    .alerts-bar {
-      background: #2a1a1a;
-      border-bottom: 1px solid #7f1d1d;
-      padding: 10px 32px;
+    /* OVERALL PROGRESS */
+    .progress-section {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
       display: flex;
-      gap: 24px;
       align-items: center;
-      flex-wrap: wrap;
+      gap: 20px;
     }
-    .alert-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-    }
-    .alert-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--red);
-      animation: pulse 2s infinite;
-      flex-shrink: 0;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
+    .progress-label { font-size: 12px; color: var(--muted); min-width: 160px; }
+    .progress-bar-wrap { flex: 1; background: var(--surface2); border-radius: 8px; height: 14px; position: relative; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%); transition: width 0.5s; }
+    .progress-pct { font-size: 16px; font-weight: 700; color: var(--accent2); min-width: 50px; text-align: right; }
+    .phase-labels { display: flex; gap: 6px; font-size: 10px; color: var(--muted); }
+    .phase-label { padding: 1px 6px; border-radius: 3px; background: var(--surface2); }
+    .phase-active { color: var(--accent2); background: #0d2e2a; border: 1px solid #0f766e; }
 
-    /* LAYOUT */
-    .main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
-
-    /* STAT CARDS */
+    /* STATS GRID */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
-      margin-bottom: 28px;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
     }
     .stat-card {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
+      padding: 16px 20px;
+      text-align: center;
     }
-    .stat-card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card .value { font-size: 32px; font-weight: 700; margin: 4px 0 2px; }
-    .stat-card .sub { font-size: 11px; color: var(--muted); }
-    .stat-card.green .value { color: var(--green); }
-    .stat-card.accent .value { color: var(--accent); }
-    .stat-card.blue .value { color: var(--blue); }
-    .stat-card.yellow .value { color: var(--yellow); }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .v-green { color: var(--green); }
+    .v-blue { color: var(--blue); }
+    .v-purple { color: var(--accent); }
+    .v-yellow { color: var(--yellow); }
+    .v-red { color: var(--red); }
+    .v-teal { color: var(--accent2); }
+
+    /* MAIN LAYOUT */
+    .main { padding: 20px 32px; display: flex; flex-direction: column; gap: 20px; }
 
     /* SECTION */
-    .section { margin-bottom: 28px; }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
     .section-header {
+      padding: 12px 16px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .section-sub { font-size: 11px; color: var(--muted); }
+
+    /* KANBAN */
+    .kanban { display: flex; gap: 10px; padding: 14px; overflow-x: auto; }
+    .kanban-col { min-width: 120px; flex: 1; }
+    .kanban-col-header {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 6px 10px;
+      border-radius: 5px 5px 0 0;
+      text-align: center;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+    .kanban-col-header.active { color: var(--accent2); background: #0d2e2a; border-color: #0f766e; }
+    .kanban-cards { border: 1px solid var(--border); border-top: none; border-radius: 0 0 5px 5px; min-height: 60px; padding: 6px; background: var(--bg); }
+    .kanban-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 7px 9px;
+      margin-bottom: 5px;
+      font-size: 11px;
+    }
+    .kanban-card .co { font-weight: 600; color: var(--text); }
+    .kanban-card .score { color: var(--accent2); font-size: 10px; }
+    .kanban-empty { color: var(--muted); font-size: 10px; text-align: center; padding: 12px 6px; font-style: italic; }
+
+    /* MASTER TABLE */
+    .app-table { width: 100%; border-collapse: collapse; }
+    .app-table th {
+      background: var(--surface2);
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      vertical-align: middle;
+    }
+    .app-table tr:last-child td { border-bottom: none; }
+    .app-table tr:hover td { background: #1d2035; }
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 22px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .score-high { background: #052e16; color: var(--green); border: 1px solid #166534; }
+    .score-med { background: #0c1a3a; color: var(--blue); border: 1px solid #1e3a6e; }
+    .status-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .s-eval { background: #1a0a3a; color: #a78bfa; border: 1px solid #4c1d95; }
+    .s-applied { background: #0c1a3a; color: var(--blue); border: 1px solid #1e3a6e; }
+    .s-screen { background: #052e16; color: var(--green); border: 1px solid #166534; }
+    .comp-bar-wrap { width: 80px; background: var(--surface2); border-radius: 4px; height: 8px; display: inline-block; overflow: hidden; vertical-align: middle; }
+    .comp-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%); }
+    .comp-pct { font-size: 10px; color: var(--muted); margin-left: 6px; }
+    .salary-range { color: var(--accent2); font-size: 11px; font-weight: 600; }
+    .loc-tag { font-size: 10px; color: var(--green); }
+
+    /* TWO-COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    /* PDF QUEUE */
+    .pdf-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 14px;
     }
-    .section-header h2 { font-size: 15px; font-weight: 600; }
-    .badge {
-      background: var(--surface2);
-      border-radius: 12px;
-      padding: 2px 10px;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* JOBS TABLE */
-    .jobs-table {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    table { width: 100%; border-collapse: collapse; }
-    thead tr { background: var(--surface2); }
-    th {
-      padding: 10px 14px;
-      text-align: left;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    tbody tr {
-      border-top: 1px solid var(--border);
-      transition: background 0.15s;
-    }
-    tbody tr:hover { background: var(--surface2); }
-    td { padding: 12px 14px; }
-    .company-name { font-weight: 600; color: #fff; }
-    .role-name { color: var(--text); font-size: 13px; }
-    .salary { color: var(--accent2); font-weight: 500; }
-    .score-chip {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 12px;
-    }
-    .score-45 { background: #14532d; color: #86efac; }
-    .score-40 { background: #1e3a5f; color: #93c5fd; }
-    .score-35 { background: #44402a; color: #fde68a; }
-    .status-chip {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-    }
-    .status-evaluated { background: #1e3a5f; color: #93c5fd; }
-    .status-applied { background: #14532d; color: #86efac; }
-    .status-pdf { color: var(--green); font-size: 16px; }
-    .action-btn {
+    .pdf-item:last-child { border-bottom: none; }
+    .pdf-rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
       background: var(--accent);
       color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
-    .action-btn:hover { background: #6a59e0; }
+    .pdf-info { flex: 1; }
+    .pdf-co { font-weight: 600; font-size: 12px; }
+    .pdf-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+    .pdf-action { font-size: 10px; color: var(--yellow); font-weight: 600; }
+
+    /* EMAIL TRACKER */
+    .email-thread {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .email-thread:last-child { border-bottom: none; }
+    .email-co { font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .email-status { font-size: 10px; padding: 1px 7px; border-radius: 8px; }
+    .es-drafted { background: #2a1800; color: var(--yellow); border: 1px solid #854d0e; }
+    .es-warning { background: #1a0505; color: var(--red); border: 1px solid #7f1d1d; }
+    .es-tracking { background: #1a0a3a; color: #a78bfa; border: 1px solid #4c1d95; }
+    .email-preview { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .email-date { font-size: 10px; color: var(--muted); }
+
+    /* ALERTS */
+    .alert-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-title { font-size: 12px; font-weight: 600; }
+    .alert-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .alert-action { font-size: 10px; color: var(--yellow); margin-top: 3px; }
+
+    /* INTERVIEW JOURNEY */
+    .journey { padding: 16px; }
+    .journey-stages { display: flex; gap: 0; position: relative; }
+    .journey-stage { flex: 1; text-align: center; position: relative; }
+    .journey-stage::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+    .journey-stage:last-child::before { display: none; }
+    .journey-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 6px;
+      font-size: 12px;
+      position: relative;
+      z-index: 1;
+      color: var(--muted);
+    }
+    .journey-dot.locked { opacity: 0.4; }
+    .journey-dot.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .journey-dot.done { background: var(--green); border-color: var(--green); color: #fff; }
+    .journey-label { font-size: 10px; color: var(--muted); }
+    .journey-label.active { color: var(--accent2); }
+    .journey-locked-msg { text-align: center; padding: 12px; font-size: 12px; color: var(--muted); font-style: italic; }
+
+    /* BOT LOG */
+    .log-entry {
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      gap: 10px;
+    }
+    .log-entry:last-child { border-bottom: none; }
+    .log-time { color: var(--muted); min-width: 140px; }
+    .log-msg { color: var(--text); }
+    .log-ok { color: var(--green); }
+    .log-warn { color: var(--yellow); }
+    .log-run { color: var(--accent); }
+
+    /* FORMULA BOX */
+    .formula-box {
+      background: #090c14;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      word-break: break-all;
+      margin: 12px 14px;
+    }
+    .formula-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; font-family: sans-serif; }
+
+    /* STAGE GUIDE */
+    .stage-guide { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; }
+    .stage-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .stage-pct { color: var(--accent2); font-weight: 700; }
 
     /* BORDERLINE TABLE */
-    .borderline-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-    }
-    .borderline-card {
-      background: var(--surface);
-      border: 1px solid #374151;
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-    .borderline-card .co { font-weight: 700; font-size: 15px; color: #fff; }
-    .borderline-card .ro { color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
-    .borderline-card .salary { color: var(--accent2); font-size: 13px; font-weight: 600; }
-    .verify-tag {
-      display: inline-block;
-      margin-top: 8px;
-      background: #451a03;
-      color: #fbbf24;
-      border-radius: 6px;
-      padding: 3px 10px;
-      font-size: 11px;
-      font-weight: 600;
-    }
+    .bt { width: 100%; border-collapse: collapse; }
+    .bt th { background: var(--surface2); padding: 8px 12px; font-size: 10px; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+    .bt td { padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--border); }
+    .bt tr:last-child td { border-bottom: none; }
 
-    /* RUN LOG */
-    .run-log {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .log-row {
-      display: grid;
-      grid-template-columns: 120px 60px 80px 80px 1fr;
-      gap: 0;
-      border-bottom: 1px solid var(--border);
-      padding: 10px 14px;
-      font-size: 13px;
-      align-items: center;
-    }
-    .log-row:last-child { border-bottom: none; }
-    .log-header {
-      background: var(--surface2);
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-    .log-time { color: var(--muted); font-size: 12px; font-family: monospace; }
-    .log-zero { color: var(--muted); }
-    .log-new { color: var(--green); font-weight: 700; }
-    .log-note { color: var(--muted); font-size: 12px; }
-
-    /* PERSONAL ALERTS */
-    .alerts-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .alert-row {
+    /* QUICK LINKS */
+    .qlink-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 14px; }
+    .qlink {
       display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border);
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 12px;
+      transition: border-color 0.2s;
     }
-    .alert-row:last-child { border-bottom: none; }
-    .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-    .alert-content .title { font-weight: 600; font-size: 14px; }
-    .alert-content .desc { color: var(--muted); font-size: 12px; margin-top: 3px; }
-    .alert-urgent { border-left: 3px solid var(--red); }
-    .alert-warning { border-left: 3px solid var(--yellow); }
-    .alert-info { border-left: 3px solid var(--blue); }
+    .qlink:hover { border-color: var(--accent); }
+    .qlink-icon { font-size: 16px; }
+    .qlink-label { font-size: 11px; font-weight: 600; }
+    .qlink-sub { font-size: 10px; color: var(--muted); }
+
+    /* MARKET NOTE */
+    .market-note {
+      background: #1a0f02;
+      border: 1px solid #854d0e;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 0 14px 14px;
+      font-size: 11px;
+      color: var(--yellow);
+    }
 
     /* FOOTER */
     .footer {
       text-align: center;
-      padding: 20px;
+      padding: 16px;
+      font-size: 11px;
       color: var(--muted);
-      font-size: 12px;
       border-top: 1px solid var(--border);
-      margin-top: 32px;
     }
+
+    /* REFRESH TIMER */
+    #timer { color: var(--accent2); font-weight: 600; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   </style>
 </head>
 <body>
 
+<!-- TOP BAR -->
+<div class="topbar">
+  <span>&#128640; Bhuvan's Job Command Center</span>
+  <a href="https://docs.google.com/spreadsheets/d/1sp5d0nuuOMCJsyobKjlfIT8Tuw0NPEvL3Sv0OGoF30U/edit" target="_blank">&#128202; Google Sheet</a>
+  <a href="https://www.notion.so/4bf826851baa4ba9b8c5ddbe9a6fa004" target="_blank">&#128221; Notion DB</a>
+  <a href="https://github.com/bchamp21/career-ops" target="_blank">&#128296; GitHub Repo</a>
+  <a href="https://github.com/bchamp21/career-ops/blob/main/data/status-board.csv" target="_blank">&#128200; Live CSV</a>
+  <div class="topbar-right">
+    <span class="live-dot"></span>
+    <span>Bot active &bull; Refreshes in <span id="timer">5:00</span></span>
+    <span>Last sync: <span id="lastSync">Jul 2, 2026</span></span>
+  </div>
+</div>
+
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <h1>Bhuvan's Job Search Dashboard</h1>
-    <p>bhuvansarakam@gmail.com &nbsp;·&nbsp; Denver, CO &nbsp;·&nbsp; H1B Transfer/Sponsorship Required &nbsp;·&nbsp; Target: $120K–$150K+</p>
+    <h1>Bhuvan S &mdash; Senior Data Scientist / Applied AI Engineer</h1>
+    <p>bhuvansarakam@gmail.com &bull; Denver, CO &bull; 10+ yrs LLM/RAG/MLOps &bull; Databricks &bull; Janus Henderson</p>
+    <div class="header-tags">
+      <span class="tag tag-green">&#10003; H1B Transfer Required</span>
+      <span class="tag tag-blue">&#127760; Remote Only</span>
+      <span class="tag tag-purple">&#128181; $165K&ndash;$350K Target</span>
+      <span class="tag tag-yellow">&#128196; Full-Time Only (No 1099/Contract)</span>
+      <span class="tag tag-green">&#129504; LLM / RAG / GenAI / MLOps</span>
+    </div>
   </div>
-  <div class="refresh-badge">Auto-refresh every <span>10 min</span> &nbsp;·&nbsp; Last updated: <span id="ts"></span></div>
+  <div class="header-right">
+    <div class="last-run">Bot run count</div>
+    <div class="run-count">29</div>
+    <div class="last-run">Last run: Jul 2, 2026 ~01:15 UTC</div>
+    <div style="margin-top:6px;font-size:11px;color:var(--yellow);">&#128679; Holiday Freeze Jul 1&ndash;4</div>
+  </div>
 </div>
 
-<!-- PERSONAL ALERTS BAR -->
-<div class="alerts-bar">
-  <strong style="color:#f87171;font-size:13px;">⚠ Action Needed:</strong>
-  <div class="alert-item"><span class="alert-dot"></span> <strong>GEICO:</strong> 5 unrecognized device logins (Jul 2 ~02:45–03:04 UTC) — verify account</div>
-  <div class="alert-item"><span class="alert-dot"></span> <strong>Equitas Bank:</strong> KYC reply bounced — resend passport to rekyc@equitas.bank.in</div>
-  <div class="alert-item"><span class="alert-dot" style="background:var(--yellow)"></span> <strong>Passport expired</strong> 03-FEB-26 — critical for H1B status</div>
+<!-- OVERALL PROGRESS -->
+<div class="progress-section">
+  <div class="progress-label">Overall Pipeline Progress</div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" style="width: 30%"></div>
+  </div>
+  <div class="progress-pct">30%</div>
+  <div class="phase-labels">
+    <span class="phase-label phase-active">PDF Ready &#10003;</span>
+    <span class="phase-label">Applied</span>
+    <span class="phase-label">Responding</span>
+    <span class="phase-label">Interviewing</span>
+    <span class="phase-label">Offer</span>
+    <span class="phase-label">Joined</span>
+  </div>
+</div>
+
+<!-- STATS GRID -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value v-purple">29</div>
+    <div class="stat-label">Bot Runs</div>
+    <div class="stat-sub">hourly since Jul 1</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value v-teal">5</div>
+    <div class="stat-label">Evaluated</div>
+    <div class="stat-sub">all &#8805; 4.0/5</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value v-green">5</div>
+    <div class="stat-label">PDFs Ready</div>
+    <div class="stat-sub">awaiting your click</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value v-blue">0</div>
+    <div class="stat-label">Submitted</div>
+    <div class="stat-sub">needs your review first</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value v-yellow">0</div>
+    <div class="stat-label">Interviews</div>
+    <div class="stat-sub">none scheduled yet</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value v-red">5</div>
+    <div class="stat-label">Alerts</div>
+    <div class="stat-sub">action needed</div>
+  </div>
 </div>
 
 <!-- MAIN -->
 <div class="main">
 
-  <!-- STATS -->
-  <div class="stats-grid">
-    <div class="stat-card accent">
-      <div class="label">Hourly Runs</div>
-      <div class="value">26</div>
-      <div class="sub">Since Jul 1 ~07:00 UTC</div>
+  <!-- KANBAN PIPELINE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">&#128200; Application Pipeline (8 Stages)</span>
+      <span class="section-sub">All 5 applications at PDF Ready &bull; Submit to advance</span>
     </div>
-    <div class="stat-card blue">
-      <div class="label">Jobs Evaluated</div>
-      <div class="value">5</div>
-      <div class="sub">Scored ≥ 4.0/5</div>
-    </div>
-    <div class="stat-card green">
-      <div class="label">PDFs Ready</div>
-      <div class="value">5</div>
-      <div class="sub">In output/ — apply manually</div>
-    </div>
-    <div class="stat-card yellow">
-      <div class="label">Email Drafts</div>
-      <div class="value">0</div>
-      <div class="sub">0 qualifying recruiter emails</div>
-    </div>
-    <div class="stat-card" style="--value-color:var(--muted)">
-      <div class="label">Portals Searched</div>
-      <div class="value" style="color:var(--text)">3</div>
-      <div class="sub">Indeed · ZipRecruiter · Dice</div>
-    </div>
-    <div class="stat-card" style="">
-      <div class="label">H1B Roles Found</div>
-      <div class="value" style="color:var(--red)">0</div>
-      <div class="sub">Holiday freeze Jul 1–4</div>
+    <div class="kanban">
+      <div class="kanban-col">
+        <div class="kanban-col-header">Evaluated<br><small>15%</small></div>
+        <div class="kanban-cards">
+          <div class="kanban-empty">All moved to PDF Ready</div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header active">PDF Ready<br><small>30%</small></div>
+        <div class="kanban-cards">
+          <div class="kanban-card"><div class="co">GC AI</div><div class="score">4.5/5 &#8226; $165-350K</div></div>
+          <div class="kanban-card"><div class="co">Dropzone AI</div><div class="score">4.4/5 &#8226; $200-250K</div></div>
+          <div class="kanban-card"><div class="co">Parafin</div><div class="score">4.3/5 &#8226; $230-265K</div></div>
+          <div class="kanban-card"><div class="co">Fanatics</div><div class="score">4.2/5 &#8226; $170-210K</div></div>
+          <div class="kanban-card"><div class="co">Team Velocity</div><div class="score">4.0/5 &#8226; $160-220K</div></div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">Applied<br><small>45%</small></div>
+        <div class="kanban-cards"><div class="kanban-empty">—</div></div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">Responded<br><small>55%</small></div>
+        <div class="kanban-cards"><div class="kanban-empty">—</div></div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">Phone Screen<br><small>65%</small></div>
+        <div class="kanban-cards"><div class="kanban-empty">—</div></div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">Technical<br><small>75%</small></div>
+        <div class="kanban-cards"><div class="kanban-empty">—</div></div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">Final Round<br><small>82%</small></div>
+        <div class="kanban-cards"><div class="kanban-empty">—</div></div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">Offer / Joined<br><small>88-100%</small></div>
+        <div class="kanban-cards"><div class="kanban-empty">—</div></div>
+      </div>
     </div>
   </div>
 
-  <!-- JOBS PIPELINE -->
+  <!-- MASTER APPLICATION TABLE -->
   <div class="section">
     <div class="section-header">
-      <h2>Job Pipeline — PDFs Ready for Your Submission</h2>
-      <span class="badge">5 roles · all ≥ 4.0/5</span>
+      <span class="section-title">&#128203; Master Application Table</span>
+      <span class="section-sub">All tracked applications with completion bars</span>
     </div>
-    <div class="jobs-table">
-      <table>
+    <table class="app-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Company</th>
+          <th>Role</th>
+          <th>Score</th>
+          <th>Salary Range</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Completion</th>
+          <th>PDF</th>
+          <th>Applied</th>
+          <th>Phone</th>
+          <th>Technical</th>
+          <th>Final</th>
+          <th>Offer</th>
+          <th>Joining</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--muted)">1</td>
+          <td><strong>GC AI</strong></td>
+          <td style="color:var(--muted)">Applied AI Engineer</td>
+          <td><span class="score-badge score-high">4.5</span></td>
+          <td><span class="salary-range">$165K&ndash;$350K</span></td>
+          <td><span class="loc-tag">&#127760; Remote</span></td>
+          <td><span class="status-pill s-eval">Evaluated</span></td>
+          <td>
+            <div class="comp-bar-wrap"><div class="comp-bar" style="width:30%"></div></div>
+            <span class="comp-pct">30%</span>
+          </td>
+          <td style="color:var(--green)">&#10003;</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted)">2</td>
+          <td><strong>Dropzone AI</strong></td>
+          <td style="color:var(--muted)">Research Engineer</td>
+          <td><span class="score-badge score-high">4.4</span></td>
+          <td><span class="salary-range">$200K&ndash;$250K</span></td>
+          <td><span class="loc-tag">&#127760; Remote</span></td>
+          <td><span class="status-pill s-eval">Evaluated</span></td>
+          <td>
+            <div class="comp-bar-wrap"><div class="comp-bar" style="width:30%"></div></div>
+            <span class="comp-pct">30%</span>
+          </td>
+          <td style="color:var(--green)">&#10003;</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted)">3</td>
+          <td><strong>Parafin</strong></td>
+          <td style="color:var(--muted)">ML Platform Engineer</td>
+          <td><span class="score-badge score-high">4.3</span></td>
+          <td><span class="salary-range">$230K&ndash;$265K</span></td>
+          <td><span class="loc-tag">&#127760; Remote</span></td>
+          <td><span class="status-pill s-eval">Evaluated</span></td>
+          <td>
+            <div class="comp-bar-wrap"><div class="comp-bar" style="width:30%"></div></div>
+            <span class="comp-pct">30%</span>
+          </td>
+          <td style="color:var(--green)">&#10003;</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted)">4</td>
+          <td><strong>Fanatics</strong></td>
+          <td style="color:var(--muted)">Senior Data Scientist</td>
+          <td><span class="score-badge score-high">4.2</span></td>
+          <td><span class="salary-range">$170K&ndash;$210K</span></td>
+          <td><span class="loc-tag">&#127760; Remote</span></td>
+          <td><span class="status-pill s-eval">Evaluated</span></td>
+          <td>
+            <div class="comp-bar-wrap"><div class="comp-bar" style="width:30%"></div></div>
+            <span class="comp-pct">30%</span>
+          </td>
+          <td style="color:var(--green)">&#10003;</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted)">5</td>
+          <td><strong>Team Velocity</strong></td>
+          <td style="color:var(--muted)">Senior Data Scientist</td>
+          <td><span class="score-badge score-med">4.0</span></td>
+          <td><span class="salary-range">$160K&ndash;$220K</span></td>
+          <td><span class="loc-tag">&#127758; Remote optional</span></td>
+          <td><span class="status-pill s-eval">Evaluated</span></td>
+          <td>
+            <div class="comp-bar-wrap"><div class="comp-bar" style="width:30%"></div></div>
+            <span class="comp-pct">30%</span>
+          </td>
+          <td style="color:var(--green)">&#10003;</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+          <td style="color:var(--muted)">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- Stage Guide -->
+    <div style="padding: 10px 12px; border-top: 1px solid var(--border); background: var(--surface2);">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:600;">COMPLETION STAGE GUIDE</div>
+      <div class="stage-guide">
+        <span class="stage-pill">Evaluated <span class="stage-pct">15%</span></span>
+        <span class="stage-pill">PDF Ready <span class="stage-pct">30%</span></span>
+        <span class="stage-pill">Applied <span class="stage-pct">45%</span></span>
+        <span class="stage-pill">Responded <span class="stage-pct">55%</span></span>
+        <span class="stage-pill">Phone Screen <span class="stage-pct">65%</span></span>
+        <span class="stage-pill">Technical Interview <span class="stage-pct">75%</span></span>
+        <span class="stage-pill">Final Round <span class="stage-pct">82%</span></span>
+        <span class="stage-pill">Offer Received <span class="stage-pct">88%</span></span>
+        <span class="stage-pill">Negotiating <span class="stage-pct">92%</span></span>
+        <span class="stage-pill">Accepted <span class="stage-pct">96%</span></span>
+        <span class="stage-pill">Joined <span class="stage-pct">100%</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDFs + EMAIL TRACKER -->
+  <div class="two-col">
+
+    <!-- PDF QUEUE -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">&#128196; PDFs Ready to Submit</span>
+        <span class="section-sub">5 tailored resumes &bull; Your final click needed</span>
+      </div>
+      <div class="pdf-item">
+        <div class="pdf-rank">1</div>
+        <div class="pdf-info">
+          <div class="pdf-co">GC AI &mdash; Applied AI Engineer</div>
+          <div class="pdf-meta">4.5/5 &bull; $165K&ndash;$350K &bull; Remote &bull; Top LLM/RAG match</div>
+          <div class="pdf-meta" style="color:var(--accent2)">output/cv-bhuvan-s-gc-ai-2026-07-01.pdf</div>
+        </div>
+        <div class="pdf-action">SUBMIT FIRST</div>
+      </div>
+      <div class="pdf-item">
+        <div class="pdf-rank">2</div>
+        <div class="pdf-info">
+          <div class="pdf-co">Dropzone AI &mdash; Research Engineer</div>
+          <div class="pdf-meta">4.4/5 &bull; $200K&ndash;$250K &bull; Remote &bull; AI Security + RAG</div>
+          <div class="pdf-meta" style="color:var(--accent2)">output/cv-bhuvan-s-dropzone-ai-2026-07-01.pdf</div>
+        </div>
+        <div class="pdf-action">SUBMIT</div>
+      </div>
+      <div class="pdf-item">
+        <div class="pdf-rank">3</div>
+        <div class="pdf-info">
+          <div class="pdf-co">Parafin &mdash; ML Platform Engineer</div>
+          <div class="pdf-meta">4.3/5 &bull; $230K&ndash;$265K &bull; Remote &bull; MLOps/ML Platform</div>
+          <div class="pdf-meta" style="color:var(--accent2)">output/cv-bhuvan-s-parafin-2026-07-01.pdf</div>
+        </div>
+        <div class="pdf-action">SUBMIT</div>
+      </div>
+      <div class="pdf-item">
+        <div class="pdf-rank">4</div>
+        <div class="pdf-info">
+          <div class="pdf-co">Fanatics &mdash; Senior Data Scientist</div>
+          <div class="pdf-meta">4.2/5 &bull; $170K&ndash;$210K &bull; Remote &bull; LLM/RAG + DS</div>
+          <div class="pdf-meta" style="color:var(--accent2)">output/cv-bhuvan-s-fanatics-2026-07-01.pdf</div>
+        </div>
+        <div class="pdf-action">SUBMIT</div>
+      </div>
+      <div class="pdf-item">
+        <div class="pdf-rank">5</div>
+        <div class="pdf-info">
+          <div class="pdf-co">Team Velocity &mdash; Senior Data Scientist</div>
+          <div class="pdf-meta">4.0/5 &bull; $160K&ndash;$220K &bull; Remote optional &bull; DS archetype</div>
+          <div class="pdf-meta" style="color:var(--accent2)">output/cv-bhuvan-s-team-velocity-2026-07-01.pdf</div>
+        </div>
+        <div class="pdf-action">SUBMIT</div>
+      </div>
+    </div>
+
+    <!-- EMAIL CONVERSATION TRACKER -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">&#128140; Email Conversation Tracker</span>
+        <span class="section-sub">Per-company email threads (Gmail: bhuvansarakam@gmail.com)</span>
+      </div>
+      <div class="email-thread">
+        <div class="email-co">
+          Tanisha Systems (Neelesh)
+          <span class="email-status es-warning">&#9888; H1B INCOMPATIBLE</span>
+        </div>
+        <div class="email-preview">Re: Watsonx.Data Engineer — CONTRACT role. H1B transfer requires FTE only. DO NOT pursue.</div>
+        <div class="email-date">Jul 2, 2026 ~03:15 UTC &bull; Reply drafted (draft only)</div>
+      </div>
+      <div class="email-thread">
+        <div class="email-co">
+          GC AI
+          <span class="email-status es-tracking">Tracking</span>
+        </div>
+        <div class="email-preview">No recruiter email yet. Applied AI Engineer role scored 4.5/5. PDF ready, submit via company portal.</div>
+        <div class="email-date">Awaiting contact after submission</div>
+      </div>
+      <div class="email-thread">
+        <div class="email-co">
+          Dropzone AI
+          <span class="email-status es-tracking">Tracking</span>
+        </div>
+        <div class="email-preview">Research Engineer (AI Security + RAG). 4.4/5. PDF ready. No recruiter email yet.</div>
+        <div class="email-date">Awaiting contact after submission</div>
+      </div>
+      <div class="email-thread">
+        <div class="email-co">
+          Parafin
+          <span class="email-status es-tracking">Tracking</span>
+        </div>
+        <div class="email-preview">ML Platform Engineer (MLOps). 4.3/5. PDF ready. No recruiter email yet.</div>
+        <div class="email-date">Awaiting contact after submission</div>
+      </div>
+      <div class="email-thread">
+        <div class="email-co">
+          Fanatics
+          <span class="email-status es-tracking">Tracking</span>
+        </div>
+        <div class="email-preview">Senior Data Scientist (LLM/RAG+DS). 4.2/5. PDF ready. No recruiter email yet.</div>
+        <div class="email-date">Awaiting contact after submission</div>
+      </div>
+      <div class="email-thread">
+        <div class="email-co">
+          Team Velocity
+          <span class="email-status es-tracking">Tracking</span>
+        </div>
+        <div class="email-preview">Senior Data Scientist. 4.0/5. PDF ready. Note: location listed as "Remote optional" — confirm remote on apply.</div>
+        <div class="email-date">Awaiting contact after submission</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERVIEW JOURNEY -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">&#127942; Interview Journey Tracker</span>
+      <span class="section-sub">Unlocks once first phone screen is scheduled</span>
+    </div>
+    <div class="journey">
+      <div class="journey-stages">
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#128100;</div>
+          <div class="journey-label">Applied</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#128222;</div>
+          <div class="journey-label">Phone Screen</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#128187;</div>
+          <div class="journey-label">Technical</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#128101;</div>
+          <div class="journey-label">Final Round</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#128181;</div>
+          <div class="journey-label">Offer</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#129309;</div>
+          <div class="journey-label">Negotiating</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#127881;</div>
+          <div class="journey-label">Accepted</div>
+        </div>
+        <div class="journey-stage">
+          <div class="journey-dot locked">&#127968;</div>
+          <div class="journey-label">Joined</div>
+        </div>
+      </div>
+      <div class="journey-locked-msg">
+        &#128274; Waiting for first phone screen to be scheduled. Submit the 5 PDFs to unlock this section.
+        <br><br>
+        <strong style="color:var(--text)">Offer Target:</strong> <span style="color:var(--accent2)">$165K&ndash;$350K &bull; Remote &bull; Full-time FTE &bull; H1B Sponsorship/Transfer</span>
+        <br>
+        <strong style="color:var(--text)">Joining Timeline:</strong> <span style="color:var(--muted)">TBD (estimated 45&ndash;90 days from first offer)</span>
+        <br>
+        <strong style="color:var(--text)">Target Location:</strong> <span style="color:var(--muted)">100% Remote (Denver, CO base)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTS + BORDERLINE -->
+  <div class="two-col">
+
+    <!-- ALERTS -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">&#128680; Priority Alerts (5)</span>
+        <span class="section-sub">Action needed from you</span>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon">&#9888;&#65039;</div>
+        <div>
+          <div class="alert-title">Tanisha Systems — CONTRACT Role (H1B Incompatible)</div>
+          <div class="alert-desc">Neelesh reached out for Watsonx.Data Engineer. This is a contract/1099 role — H1B requires FTE sponsorship only. Bot drafted a polite decline clarifying FTE requirement.</div>
+          <div class="alert-action">&#10140; Verify draft in Gmail, send only if correct, DO NOT accept contract</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon">&#128274;</div>
+        <div>
+          <div class="alert-title">GEICO — 5 Unrecognized Device Logins (Jul 1&ndash;2 UTC)</div>
+          <div class="alert-desc">Security alert from GEICO app. 5 new device logins detected on your account around the time of session start.</div>
+          <div class="alert-action">&#10140; Log in to GEICO, review devices, change password if not yours</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon">&#128180;</div>
+        <div>
+          <div class="alert-title">ICICI Bank — Fund Transfer M2E04972043</div>
+          <div class="alert-desc">Transfer notification received. Verify this was initiated by you from your ICICI NRI account.</div>
+          <div class="alert-action">&#10140; Check ICICI portal or call +1-800-ICICI to verify</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon">&#128196;</div>
+        <div>
+          <div class="alert-title">Equitas Bank — KYC Update Required</div>
+          <div class="alert-desc">Email received requesting KYC re-verification. Send fresh documents to rekyc@equitas.bank.in (not a reply to the existing email).</div>
+          <div class="alert-action">&#10140; Email rekyc@equitas.bank.in with required KYC docs</div>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon">&#128722;</div>
+        <div>
+          <div class="alert-title">Passport Expired 03-FEB-26 &bull; US Visa Expired 27-JUN-26</div>
+          <div class="alert-desc">Your travel document status flags H1B transfer risk if you need to travel internationally. Critical for job search continuity.</div>
+          <div class="alert-action">&#10140; Consult immigration attorney ASAP about H1B transfer + visa renewal timeline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BORDERLINE ROLES -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">&#128312; Borderline Roles (3.5&ndash;3.9/5)</span>
+        <span class="section-sub">Below threshold — only pursue if pipeline stalls</span>
+      </div>
+      <table class="bt">
         <thead>
           <tr>
-            <th>#</th>
             <th>Company</th>
             <th>Role</th>
-            <th>Salary</th>
             <th>Score</th>
-            <th>Archetype</th>
-            <th>PDF</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th>Why Below 4.0</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><span style="color:var(--muted)">2</span></td>
-            <td><span class="company-name">GC AI</span></td>
-            <td><span class="role-name">Applied AI Engineer</span></td>
-            <td><span class="salary">$165K–$350K</span></td>
-            <td><span class="score-chip score-45">4.5/5</span></td>
-            <td>LLM / RAG / GenAI</td>
-            <td><span class="status-pdf">✅</span></td>
-            <td><span class="status-chip status-evaluated">Evaluated</span></td>
-            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-gc-ai-2026-07-01.pdf')">📄 View PDF</button></td>
+            <td><strong>Target</strong></td>
+            <td>Sr Data Scientist</td>
+            <td style="color:var(--yellow)">3.8</td>
+            <td style="color:var(--muted);font-size:10px">Partial H1B sponsor, hybrid not confirmed remote</td>
           </tr>
           <tr>
-            <td><span style="color:var(--muted)">4</span></td>
-            <td><span class="company-name">Dropzone AI</span></td>
-            <td><span class="role-name">Research Engineer</span></td>
-            <td><span class="salary">$200K–$250K</span></td>
-            <td><span class="score-chip score-45">4.4/5</span></td>
-            <td>LLM / RAG / GenAI</td>
-            <td><span class="status-pdf">✅</span></td>
-            <td><span class="status-chip status-evaluated">Evaluated</span></td>
-            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-dropzone-ai-2026-07-01.pdf')">📄 View PDF</button></td>
+            <td><strong>Grainger</strong></td>
+            <td>ML Engineer</td>
+            <td style="color:var(--yellow)">3.7</td>
+            <td style="color:var(--muted);font-size:10px">Ops-heavy, less LLM/RAG, low GenAI signal</td>
           </tr>
           <tr>
-            <td><span style="color:var(--muted)">3</span></td>
-            <td><span class="company-name">Parafin</span></td>
-            <td><span class="role-name">ML Platform Engineer</span></td>
-            <td><span class="salary">$230K–$265K</span></td>
-            <td><span class="score-chip score-40">4.3/5</span></td>
-            <td>MLOps / ML Platform</td>
-            <td><span class="status-pdf">✅</span></td>
-            <td><span class="status-chip status-evaluated">Evaluated</span></td>
-            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-parafin-2026-07-01.pdf')">📄 View PDF</button></td>
+            <td><strong>Jellyfish</strong></td>
+            <td>Data Scientist</td>
+            <td style="color:var(--yellow)">3.6</td>
+            <td style="color:var(--muted);font-size:10px">Small company, H1B sponsor unknown, low comp band</td>
           </tr>
           <tr>
-            <td><span style="color:var(--muted)">1</span></td>
-            <td><span class="company-name">Fanatics</span></td>
-            <td><span class="role-name">Senior Data Scientist</span></td>
-            <td><span class="salary">$170K–$210K</span></td>
-            <td><span class="score-chip score-40">4.2/5</span></td>
-            <td>Senior DS / ML</td>
-            <td><span class="status-pdf">✅</span></td>
-            <td><span class="status-chip status-evaluated">Evaluated</span></td>
-            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-fanatics-2026-07-01.pdf')">📄 View PDF</button></td>
+            <td><strong>BCBS RI</strong></td>
+            <td>Data Scientist</td>
+            <td style="color:var(--yellow)">3.5</td>
+            <td style="color:var(--muted);font-size:10px">Healthcare-specific, no LLM/GenAI, remote unclear</td>
           </tr>
           <tr>
-            <td><span style="color:var(--muted)">5</span></td>
-            <td><span class="company-name">Team Velocity</span></td>
-            <td><span class="role-name">Senior Data Scientist</span></td>
-            <td><span class="salary">$160K–$220K</span></td>
-            <td><span class="score-chip score-40">4.0/5</span></td>
-            <td>Senior DS / ML</td>
-            <td><span class="status-pdf">✅</span></td>
-            <td><span class="status-chip status-evaluated">Evaluated</span></td>
-            <td><button class="action-btn" onclick="alert('File: output/cv-bhuvan-s-team-velocity-2026-07-01.pdf')">📄 View PDF</button></td>
+            <td><strong>Sift Science</strong></td>
+            <td>ML Engineer</td>
+            <td style="color:var(--yellow)">3.5</td>
+            <td style="color:var(--muted);font-size:10px">Fraud detection only, no RAG/LLM scope, sponsor unknown</td>
           </tr>
         </tbody>
       </table>
-    </div>
-    <p style="color:var(--muted);font-size:12px;margin-top:8px;">⚠ Per ethics rules: Claude prepares tailored PDFs but never auto-submits. <strong style="color:var(--text)">You must upload each PDF and click Apply yourself.</strong></p>
-  </div>
-
-  <!-- BORDERLINE ROLES -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Borderline Roles — Verify Before Pursuing</h2>
-      <span class="badge">4 roles · 3.5–3.9/5 · H1B or remote unconfirmed</span>
-    </div>
-    <div class="borderline-grid">
-      <div class="borderline-card">
-        <div class="co">Target</div>
-        <div class="ro">Principal Engineer – AI Platform (AI Factory)</div>
-        <div class="salary">$168K–$303K · Remote or Hybrid (Brooklyn Park, MN)</div>
-        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 3.8/5. Large Fortune 500 AI org. H1B historically sponsored. <strong>"Remote or Hybrid"</strong> — need to confirm true remote from Denver.</div>
-        <span class="verify-tag">⚡ Verify remote + H1B on Target Careers</span>
-      </div>
-      <div class="borderline-card">
-        <div class="co">Grainger</div>
-        <div class="ro">Data Engineer (Req #332427)</div>
-        <div class="salary">$153K–$174K · Remote (Lake Forest, IL)</div>
-        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 3.8/5. Fortune 500 industrial/B2B. Data Engineering secondary archetype. H1B historically sponsored.</div>
-        <span class="verify-tag">⚡ Verify remote + H1B on Grainger Careers</span>
-      </div>
-      <div class="borderline-card">
-        <div class="co">Jellyfish</div>
-        <div class="ro">Senior Data &amp; AI Platform Engineer</div>
-        <div class="salary">$150K–$230K · Fully Remote</div>
-        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 4.0/5 borderline. MLOps/AI Platform archetype match. H1B sponsorship unknown — check their careers page.</div>
-        <span class="verify-tag">⚡ Verify H1B sponsorship on Jellyfish Careers</span>
-      </div>
-      <div class="borderline-card">
-        <div class="co">BCBS Rhode Island</div>
-        <div class="ro">Senior AI Integration Engineer</div>
-        <div class="salary">$151.9K–$243.1K · Remote Optional</div>
-        <div style="color:var(--muted);font-size:12px;margin-top:6px;">Score: 3.5/5. Nonprofit insurer — H1B sponsorship less common. "Remote optional" may require Providence RI presence.</div>
-        <span class="verify-tag">⚡ Verify H1B + remote on BCBS RI Careers</span>
+      <div class="market-note">
+        &#128679; <strong>Holiday Freeze (Jul 1&ndash;4, 2026):</strong> Most US companies have paused new job postings through July 4 weekend. New qualifying roles expected Jul 7&ndash;8. Bot scanning every hour.
       </div>
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+  <!-- QUICK LINKS + BOT LOG -->
+  <div class="two-col">
 
-    <!-- HOURLY RUN LOG -->
-    <div class="section" style="margin-bottom:0">
+    <!-- QUICK LINKS + IMPORTDATA -->
+    <div class="section">
       <div class="section-header">
-        <h2>Hourly Run Log</h2>
-        <span class="badge">26 runs · Jul 1–2</span>
+        <span class="section-title">&#128279; Quick Links &amp; Google Sheet Sync</span>
+        <span class="section-sub">All your tracking tools in one place</span>
       </div>
-      <div class="run-log">
-        <div class="log-row log-header">
-          <div>Time (UTC)</div><div>Gmail</div><div>Drafted</div><div>Jobs≥4.0</div><div>Notes</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~10:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Holiday freeze. Same recurring set ZipRecruiter.</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~09:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Equitas KYC bounce flagged. Dice 0 H1B today.</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~08:11</div><div class="log-zero">3</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">⚠ GEICO security alerts + ICICI transfer flagged.</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~07:11</div><div class="log-zero">1</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Grainger Data Eng $153K–$174K borderline (3.8/5).</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~06:11</div><div class="log-zero">1</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Target AI Platform Principal Eng $168K–$303K (3.8/5).</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~05:11</div><div class="log-zero">1</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Clify X staffing blast — Practice Dir AI IoT NYC (2.0/5).</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~04:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">ZipRecruiter: IBM below floor, Jellyfish borderline.</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~03:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">Dice: 17 postings, 100% no H1B. Holiday freeze.</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Jul 2 ~02:11</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-zero">0</div><div class="log-note">UHG/Airbnb/SentinelOne — all no H1B on Dice.</div>
-        </div>
-        <div class="log-row">
-          <div class="log-time">Runs 1–17</div><div class="log-zero">—</div><div class="log-zero">—</div><div class="log-zero">—</div><div class="log-note">Jul 1 session: 5 PDFs generated. Spam baseline established.</div>
-        </div>
+      <div class="qlink-grid">
+        <a class="qlink" href="https://docs.google.com/spreadsheets/d/1sp5d0nuuOMCJsyobKjlfIT8Tuw0NPEvL3Sv0OGoF30U/edit" target="_blank">
+          <span class="qlink-icon">&#128202;</span>
+          <div><div class="qlink-label">Google Sheet (Live)</div><div class="qlink-sub">Master tracker &bull; Auto-syncs via IMPORTDATA</div></div>
+        </a>
+        <a class="qlink" href="https://www.notion.so/4bf826851baa4ba9b8c5ddbe9a6fa004" target="_blank">
+          <span class="qlink-icon">&#128221;</span>
+          <div><div class="qlink-label">Notion Database</div><div class="qlink-sub">Rich tracking with dates, offer amounts, KPIs</div></div>
+        </a>
+        <a class="qlink" href="https://github.com/bchamp21/career-ops" target="_blank">
+          <span class="qlink-icon">&#128296;</span>
+          <div><div class="qlink-label">GitHub Repo</div><div class="qlink-sub">career-ops source &bull; claude/job-search branch</div></div>
+        </a>
+        <a class="qlink" href="https://github.com/bchamp21/career-ops/blob/main/data/status-board.csv" target="_blank">
+          <span class="qlink-icon">&#128200;</span>
+          <div><div class="qlink-label">Live CSV (GitHub)</div><div class="qlink-sub">Raw data source for Google Sheet IMPORTDATA</div></div>
+        </a>
+        <a class="qlink" href="mailto:bhuvansarakam@gmail.com" target="_blank">
+          <span class="qlink-icon">&#128140;</span>
+          <div><div class="qlink-label">Gmail Inbox</div><div class="qlink-sub">bhuvansarakam@gmail.com &bull; Monitored hourly</div></div>
+        </a>
+        <a class="qlink" href="https://www.linkedin.com/in/bhuvansdata" target="_blank">
+          <span class="qlink-icon">&#128101;</span>
+          <div><div class="qlink-label">LinkedIn</div><div class="qlink-sub">linkedin.com/in/bhuvansdata</div></div>
+        </a>
       </div>
+      <div class="formula-label" style="padding: 0 14px; margin-top: 10px;">Google Sheet Live Sync Formula (paste in Sheet cell A1):</div>
+      <div class="formula-box">=IMPORTDATA("https://raw.githubusercontent.com/bchamp21/career-ops/main/data/status-board.csv")</div>
     </div>
 
-    <!-- PERSONAL ALERTS PANEL -->
-    <div class="section" style="margin-bottom:0">
+    <!-- HOURLY BOT LOG -->
+    <div class="section">
       <div class="section-header">
-        <h2>Personal Alerts</h2>
-        <span class="badge">Requires your attention</span>
+        <span class="section-title">&#129302; Hourly Bot Log (Last 10 of 29 Runs)</span>
+        <span class="section-sub">Auto-updated each run &bull; Run 29 complete</span>
       </div>
-      <div class="alerts-section">
-        <div class="alert-row alert-urgent">
-          <div class="alert-icon">🔐</div>
-          <div class="alert-content">
-            <div class="title">GEICO — Unrecognized Device Logins</div>
-            <div class="desc">5 "new device" login emails on Jul 2: 1× Browser (18:47 UTC Jul 1), 4× iPhone (02:45–03:04 UTC Jul 2). Log into GEICO.com and verify activity. Change password if you didn't make these logins.</div>
-          </div>
-        </div>
-        <div class="alert-row alert-urgent">
-          <div class="alert-icon">🏦</div>
-          <div class="alert-content">
-            <div class="title">ICICI Money2India — Fund Transfer</div>
-            <div class="desc">3 OTPs generated at 02:30–02:34 UTC + transfer receipt #M2E04972043 at 02:38 UTC. If you did NOT initiate this, contact ICICI immediately.</div>
-          </div>
-        </div>
-        <div class="alert-row alert-warning">
-          <div class="alert-icon">📬</div>
-          <div class="alert-content">
-            <div class="title">Equitas Bank KYC — Reply Bounced</div>
-            <div class="desc">Your reply at 03:11 UTC bounced (customer-support@equitas.bank.in not valid). Send a fresh email with passport scan to: <strong>rekyc@equitas.bank.in</strong></div>
-          </div>
-        </div>
-        <div class="alert-row alert-warning">
-          <div class="alert-icon">🛂</div>
-          <div class="alert-content">
-            <div class="title">Passport Expired — 03-FEB-2026</div>
-            <div class="desc">Critical for H1B status maintenance. US visa also expired 27-JUN-2026 (per Equitas KYC). Renew passport ASAP and consult immigration attorney regarding H1B implications.</div>
-          </div>
-        </div>
-        <div class="alert-row alert-info">
-          <div class="alert-icon">🧾</div>
-          <div class="alert-content">
-            <div class="title">Elite Tax Filling — p.divya@elitetaxfilling.com</div>
-            <div class="desc">Sent direct email offering off-season tax assistance. Review if this is your existing tax advisor.</div>
-          </div>
-        </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 2 ~01:15 UTC R29</span>
+        <span class="log-msg"><span class="log-run">[RUN 29]</span> Gmail: 0 new qualifying threads. Portals: 0 new H1B+remote+FT ≥4.0. Holiday freeze. <span class="log-ok">Dashboard updated.</span></span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 2 ~00:15 UTC R28</span>
+        <span class="log-msg"><span class="log-run">[RUN 28]</span> Gmail: Tanisha contract (Neelesh) — <span class="log-warn">H1B INCOMPAT</span>. Draft created. Portals: 0 qualifying.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~23:15 UTC R27</span>
+        <span class="log-msg"><span class="log-run">[RUN 27]</span> Gmail: 0 new. Portals: 0 qualifying. Holiday freeze persists.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~22:15 UTC R26</span>
+        <span class="log-msg"><span class="log-run">[RUN 26]</span> 0 new qualifying. GEICO security alert flagged for user review.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~21:15 UTC R25</span>
+        <span class="log-msg"><span class="log-run">[RUN 25]</span> 0 new qualifying. ICICI transfer M2E04972043 flagged.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~20:15 UTC R24</span>
+        <span class="log-msg"><span class="log-run">[RUN 24]</span> 0 new qualifying. Equitas KYC alert flagged.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~19:15 UTC R23</span>
+        <span class="log-msg"><span class="log-run">[RUN 23]</span> 0 new qualifying. Portals scanned: Indeed, ZipRecruiter, Dice.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~10:15 UTC R14</span>
+        <span class="log-msg"><span class="log-run">[RUN 14]</span> Notion DB created. 5 application pages added. Google Sheet created.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~06:15 UTC R8</span>
+        <span class="log-msg"><span class="log-run">[RUN 8]</span> 5 tailored PDFs generated (GC AI, Dropzone, Parafin, Fanatics, TeamV). <span class="log-ok">All ready.</span></span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">Jul 1 ~00:15 UTC R1</span>
+        <span class="log-msg"><span class="log-run">[RUN 1]</span> System initialized. 5 jobs evaluated (4.0&ndash;4.5/5). Loop started. <span class="log-ok">Pipeline active.</span></span>
       </div>
     </div>
+  </div>
 
-  </div><!-- end 2-col grid -->
+</div>
 
-</div><!-- end main -->
-
+<!-- FOOTER -->
 <div class="footer">
-  career-ops &nbsp;·&nbsp; Bhuvan S. job search pipeline &nbsp;·&nbsp; Auto-refreshes every 10 minutes &nbsp;·&nbsp; <span id="ts2"></span>
+  &#129302; Bot running hourly &bull; Bhuvan S job search pipeline &bull; Branch: claude/job-search-email-replies-fc3y9d &bull; Ethics: never auto-submits &bull; Refreshes in <span id="timer2">5:00</span>
+  <br><br>
+  <span style="color:var(--surface2)">Built with career-ops &bull; github.com/bchamp21/career-ops</span>
 </div>
 
 <script>
-  function fmt() {
-    return new Date().toLocaleString('en-US', {
-      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', timeZoneName:'short'
-    });
+  // Countdown timer
+  function startTimer(secs) {
+    let remaining = secs;
+    const els = [document.getElementById('timer'), document.getElementById('timer2')];
+    const tick = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(tick);
+        location.reload();
+        return;
+      }
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      const txt = m + ':' + String(s).padStart(2, '0');
+      els.forEach(el => { if (el) el.textContent = txt; });
+    }, 1000);
   }
-  document.getElementById('ts').textContent = fmt();
-  document.getElementById('ts2').textContent = fmt();
-</script>
+  startTimer(300);
 
+  // Last sync time
+  const ls = document.getElementById('lastSync');
+  if (ls) ls.textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+</script>
 </body>
 </html>

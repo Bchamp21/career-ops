@@ -1,0 +1,6 @@
+#,Date,Company,Role,Score,Status,Stage,Completion_Pct,PDF,Salary_Min,Salary_Max,Applied_Date,Phone_Screen,Tech_Interview,Final_Interview,Offer_Amount,Joining_Date,Location,Notes
+2,2026-07-01,GC AI,Applied AI Engineer,4.5,Evaluated,PDF Ready,30,,165000,350000,,,,,,,Remote,Top LLM/RAG/GenAI match
+4,2026-07-01,Dropzone AI,Research Engineer,4.4,Evaluated,PDF Ready,30,,200000,250000,,,,,,,Remote,LLM/RAG AI security
+3,2026-07-01,Parafin,ML Platform Engineer,4.3,Evaluated,PDF Ready,30,,230000,265000,,,,,,,Remote,MLOps/ML Platform
+1,2026-07-01,Fanatics,Senior Data Scientist,4.2,Evaluated,PDF Ready,30,,170000,210000,,,,,,,Remote,LLM/RAG + DS archetype
+5,2026-07-01,Team Velocity,Senior Data Scientist,4.0,Evaluated,PDF Ready,30,,160000,220000,,,,,,,Remote optional,Senior DS archetype
